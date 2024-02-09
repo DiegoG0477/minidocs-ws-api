@@ -1,4 +1,4 @@
-import {createConnection} from "@configs/db.config";
+import {createConnection} from '../configs/db.config.js';
 
 class User{
     constructor({id, username, email, password}){
@@ -42,3 +42,5 @@ class User{
         return user;
     }
 }
+
+export default User;

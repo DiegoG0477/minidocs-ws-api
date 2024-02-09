@@ -1,12 +1,13 @@
 import { Router } from "express";
-import { createDocument, deleteDocument, show, index, updateDocument } from "@controllers/documents.controller";
+import * as documentsController from "../controllers/documents.controller.js";
+import { httpAuthMiddleware } from "../middlewares/http/auth.middleware.js";
 
-const router = Router();
+const documentsRouter = Router();
 
-router.get('/', index);
-router.get('/:id', show);
-router.post('/', createDocument);
-router.patch('/:id', updateDocument);
-router.delete('/:id', deleteDocument);
+documentsRouter.get('/', httpAuthMiddleware, documentsController.index);
+documentsRouter.get('/:id', httpAuthMiddleware, documentsController.show);
+documentsRouter.post('/', httpAuthMiddleware, documentsController.createDocument);
+documentsRouter.patch('/:id', httpAuthMiddleware, documentsController.updateDocument);
+documentsRouter.delete('/:id', httpAuthMiddleware, documentsController.deleteDocument);
 
-export default router;
+export default documentsRouter;

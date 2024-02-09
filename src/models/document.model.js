@@ -1,4 +1,4 @@
-import {createConnection} from "@configs/db.config";
+import {createConnection} from '../configs/db.config.js';
 
 class Document{
     constructor({id, title, content, createdBy, createdAt, updatedAt, updatedBy, deleted, deletedAt, deletedBy}){
@@ -27,7 +27,7 @@ class Document{
         return documents;
     }
 
-    static async getById(id){
+    static async findById(id){
         const connection = await createConnection();
         const [documents] = await connection.query(`SELECT id, title, content, createdBy, createdAt, updatedAt, updatedBy, deleted, deletedAt, deletedBy FROM documents WHERE id = ${id} AND deleted = 0`);
         connection.end();

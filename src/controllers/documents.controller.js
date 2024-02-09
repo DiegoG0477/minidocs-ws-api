@@ -1,5 +1,5 @@
-import Document from '@models/Document';
-import DocumentDto from '@dtos/DocumentDto';
+import Document from '../models/document.model.js';
+import DocumentDto from '../dtos/document.dto.js';
 
 const index = async (req, res) => {
     try {
@@ -26,7 +26,7 @@ const index = async (req, res) => {
 const show = async (req, res) => {
     try {
         const id = req.params.id;
-        const document = await Document.getById(id);
+        const document = await Document.findById(id);
 
         if (!document) {
             return res.status(404).json({

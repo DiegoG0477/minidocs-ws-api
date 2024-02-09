@@ -1,4 +1,4 @@
-require("dotenv").config();
+import 'dotenv/config';
 import { createConnection } from "mysql2/promise";
 
 const config = {
@@ -8,8 +8,8 @@ const config = {
     database:"minidocs",
 }
 
-const createConnection = async () =>{
+const connectToDatabase = async () =>{
     return await createConnection(config)
 } 
 
-module.exports = {createConnection, config};
+export {connectToDatabase as createConnection, config};
