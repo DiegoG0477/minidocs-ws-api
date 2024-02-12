@@ -35,10 +35,11 @@ export const login = async (req, res) => {
 
     const token = sign(payload, secretJWT, { expiresIn: '5h' });
 
-    localStorage.setItem('token', JSON.stringify(token));
+    // localStorage.setItem('token', JSON.stringify(token));
 
     return res.status(200).json({
-        message: "acceso concedido"
+        message: "acceso concedido",
+        token: token
     });
 }
 

@@ -28,7 +28,7 @@ app.use(cors());
 app.use(express.json());
 app.use(routes);
 
-// io.use(socketioAuthMiddleware);
+io.use(socketioAuthMiddleware);
 
 const onConnection = (socket) => {
     registerDocumentsHandlers(io, socket);

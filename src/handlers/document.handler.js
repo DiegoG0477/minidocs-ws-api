@@ -38,8 +38,9 @@ export const registerDocumentsHandlers = (io, socket) => {
 
     const createDocument = async (payload) => {
         try {
-            const document = new Document({...payload, createdBy: socket.user.id});
-            await document.save();
+            const createdBy = await socket.user.user.id;
+            const document = new Document({...payload, createdBy});
+            await document.create();
 
             // emite evento al cliente que creó la notificación
             socket.emit("document:create_success", document);
@@ -70,9 +71,10 @@ export const registerDocumentsHandlers = (io, socket) => {
         }
     }
 
-    const renameDocument = async(payload, documentId, socket) => {
+    const renameDocument = async(payload) => {
         try{
-            const socketId = socket.id;
+            const socketId = socket.user.user.id;
+            const documentId = payload.documentId;
             const status = Document.rename(payload, documentId, socketId);
             socket.emit("document:rename_success", status);
         } catch(error){
@@ -87,7 +89,7 @@ export const registerDocumentsHandlers = (io, socket) => {
 
     const getContent = async (documentId) => {
         try{
-            const content = Document.getContent(documentId);
+            const content = await Document.getContent(documentId);
             socket.emit("document:get_content_success", content);
         } catch(error){
             const data = {
@@ -99,9 +101,11 @@ export const registerDocumentsHandlers = (io, socket) => {
         }
     }
 
-    const setContent = async (payload, documentId, socket) => {
+    const setContent = async (payload) => {
         try{
-            const status = Document.setContent(payload, documentId, socket.user.id);
+            const documentId = payload.documentId;
+            const socketId = socket.user.user.id;
+            const status = await Document.setContent(payload, documentId, socketId);
             socket.emit("document:set_content_success", status);
         } catch(error){
             const data = {
@@ -112,6 +116,19 @@ export const registerDocumentsHandlers = (io, socket) => {
             socket.emit("document:set_content_error", data);
         }
     }
+
+    const handleContentChanges = async (content) => {
+        try{
+            socket.broadcast.emit("server:send_document_changes", content);
+        } catch(error){
+            const data = {
+                message: "ocurrió un error al refrescar el contenido del documento",
+                error: error.message
+            }
+
+            socket.emit("server:send_changes_error", data);
+        }
+    } 
 
     //Update content para guardar los cambios en tiempo real en el documento 
     //necesito un dto con unicamente el content del documento -> Listo
@@ -130,4 +147,5 @@ export const registerDocumentsHandlers = (io, socket) => {
     socket.on("document:rename", renameDocument);
     socket.on("document:get_content", getContent);
     socket.on("document:set_content", setContent);
+    socket.on("server:receive_document_changes", handleContentChanges);
 }

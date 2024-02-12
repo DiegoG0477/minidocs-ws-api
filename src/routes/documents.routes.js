@@ -9,5 +9,8 @@ documentsRouter.get('/:id', httpAuthMiddleware, documentsController.show);
 documentsRouter.post('/', httpAuthMiddleware, documentsController.createDocument);
 documentsRouter.patch('/:id', httpAuthMiddleware, documentsController.updateDocument);
 documentsRouter.delete('/:id', httpAuthMiddleware, documentsController.deleteDocument);
+documentsRouter.get('/permissions/users', httpAuthMiddleware, documentsController.getDocumentsByUser);
+documentsRouter.post('/notifications', httpAuthMiddleware, documentsController.responseNotification);
+documentsRouter.post('/notifications/users', httpAuthMiddleware, documentsController.inviteDocumentNotification);
 
 export default documentsRouter;

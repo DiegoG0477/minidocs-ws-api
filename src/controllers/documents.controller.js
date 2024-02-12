@@ -1,5 +1,10 @@
 import Document from '../models/document.model.js';
+import jwt from 'jsonwebtoken';
+import 'dotenv/config';
 import DocumentDto from '../dtos/document.dto.js';
+
+const { verify } = jwt;
+const secretJWT = process.env.SECRET_JWT;
 
 const index = async (req, res) => {
     try {
@@ -130,7 +135,8 @@ const updateDocument = async (req, res) => {
 
 const getDocumentsByUser = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = await req.user.id;
+
         const documents = await Document.findByUserId(userId);
 
         return res.status(200).json({

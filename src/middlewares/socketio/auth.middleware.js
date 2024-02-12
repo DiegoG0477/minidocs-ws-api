@@ -1,5 +1,7 @@
-import jwt from 'jsonwebtoken'
+import jwt from 'jsonwebtoken';
 const secretJWT = process.env.SECRET_JWT;
+
+const { verify } = jwt;
 
 const verifyJWT = (socket, next) => {
     try {

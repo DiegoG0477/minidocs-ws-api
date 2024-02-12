@@ -37,7 +37,7 @@ class Document{
     
     static async findByUserId(userId){
         const connection = await createConnection();
-        const [documents] = await connection.query(`SELECT d.id, d.title, d.content, d.createdBy, d.createdAt, d.updatedAt, d.updatedBy, d.deleted, d.deletedAt, d.deletedBy FROM documents d INNER JOIN permissions p ON d.id = p.documentId WHERE p.userId = ? AND d.deleted = 0`, [userId]);
+        const [documents] = await connection.query(`SELECT d.id, d.title, d.content, d.createdBy, d.createdAt, d.updatedAt, d.updatedBy, d.deleted, d.deletedAt, d.deletedBy FROM documents d INNER JOIN permissions p ON d.id = p.documentId WHERE d.deleted = 0 AND p.userId = ?`, [userId]);
         connection.end();
         return documents;
     }
@@ -46,10 +46,11 @@ class Document{
     async create(){
         const connection = await createConnection();
         const createdDate = new Date();
-        const [document] = await connection.query(`INSERT INTO documents (title, content, createdBy, createdAt) VALUES (?, ?, ?, ?)`, [this.title, this.content, this.createdBy, createdDate]);
+        const [document] = await connection.query(`INSERT INTO documents (title, createdBy, createdAt) VALUES (?, ?, ?)`, [this.title, this.createdBy, createdDate]);
         const [permission] = await connection.query(`INSERT INTO permissions (documentId, userId) VALUES (?, ?)`, [document.insertId, this.createdBy]);
         connection.end();
-
+        
+        this.id = document.insertId;
         return document;
     }
 
@@ -112,7 +113,7 @@ class Document{
 
     static async getContent(id){
         const connection = await createConnection();
-        const [document] = await connection.query(`SELECT content FROM documents WHERE id = ?`, [id]);
+        const [document] = await connection.query(`SELECT title, content FROM documents WHERE id = ?`, [id]);
         connection.end();
         return document[0];
     }

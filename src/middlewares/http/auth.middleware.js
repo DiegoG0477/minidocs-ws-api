@@ -5,8 +5,7 @@ const { verify } = jwt;
 
 const verifyJWT = (req, res, next) => {
     try {
-        // const token = req.get('Authorization');
-        const token = localStorage.getItem('token');
+        const token = req.get('Authorization');
         
         verify(token, secretJWT, (err, decode) => {
             if (err) {
