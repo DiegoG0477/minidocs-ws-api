@@ -1,6 +1,4 @@
-// import jwt from 'jsonwebtoken';
-// const { verify } = jwt;
-import * as jwt from 'jsonwebtoken'
+import jwt from 'jsonwebtoken'
 const secretJWT = process.env.SECRET_JWT;
 
 const verifyJWT = (socket, next) => {
@@ -16,7 +14,7 @@ const verifyJWT = (socket, next) => {
         });
         */
         
-        jwt.verify(token, secretJWT, (err, decode) => {
+        verify(token, secretJWT, (err, decode) => {
             if (err) {
                 next(err);
             }

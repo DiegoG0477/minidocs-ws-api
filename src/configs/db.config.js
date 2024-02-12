@@ -9,7 +9,7 @@ const config = {
 }
 
 const connectToDatabase = async () =>{
-    return await createConnection(config)
+    return await createConnection(config);
 } 
 
 export {connectToDatabase as createConnection, config};

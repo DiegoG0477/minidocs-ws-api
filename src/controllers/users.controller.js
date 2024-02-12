@@ -1,4 +1,8 @@
 import User from '../models/user.model.js';
+import * as bcrypt from 'bcrypt';
+import 'dotenv/config'
+
+const salts = parseInt(process.env.BCRYPT_SALT);
 
 const index = async (req, res) => {
     try {
@@ -50,15 +54,16 @@ const show = async (req, res) => {
 
 const createUser = async (req, res) => {
     try {
+        const encryptedPassword = bcrypt.hashSync(req.body.password, salts);
+
         const user = new User({
-            ...req.body
+            ...req.body,
+            password: encryptedPassword
         });
 
-        return res.status(201).json({
-            success: true,
-            user,
-            message: "se creó el usuario correctamente"
-        });
+        await user.create();
+
+        return(user);
     } catch (error) {
         return res.status(500).json({
             success: false,

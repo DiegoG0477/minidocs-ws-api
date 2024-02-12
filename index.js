@@ -3,12 +3,14 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import signale from 'signale';
-import 'dotenv/config';
+import 'dotenv/config.js';
+
 import { router as routes } from './src/routes/index.js';
 import { socketioAuthMiddleware } from './src/middlewares/socketio/auth.middleware.js';
 import { registerDocumentsHandlers } from './src/handlers/document.handler.js';
 
-const port = process.env.PORT || 3002;
+const port = process.env.PORT || 3003;
+const origin = process.env.CORSORIGIN;
 const httpServerPort = parseInt(port)+1;
 
 const app = express();
@@ -16,7 +18,7 @@ const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
     cors: {
-        origin: 'http:127.0.0.1:5501'
+        origin: origin
     },
     pingInterval:1000,
     pingTimeout:2000
@@ -26,7 +28,7 @@ app.use(cors());
 app.use(express.json());
 app.use(routes);
 
-io.use(socketioAuthMiddleware);
+// io.use(socketioAuthMiddleware);
 
 const onConnection = (socket) => {
     registerDocumentsHandlers(io, socket);

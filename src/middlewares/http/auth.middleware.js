@@ -1,11 +1,14 @@
-import * as jwt from 'jsonwebtoken'
+import jwt from 'jsonwebtoken'
 const secretJWT = process.env.SECRET_JWT;
+
+const { verify } = jwt;
 
 const verifyJWT = (req, res, next) => {
     try {
-        const token = req.get('Authorization');
+        // const token = req.get('Authorization');
+        const token = localStorage.getItem('token');
         
-        jwt.verify(token, secretJWT, (err, decode) => {
+        verify(token, secretJWT, (err, decode) => {
             if (err) {
                 return res.status(401).json({
                     message: "error al validar token",

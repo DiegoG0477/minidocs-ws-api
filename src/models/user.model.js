@@ -32,6 +32,7 @@ class User{
         const connection = await createConnection();
         const [users] = await connection.query("SELECT id, username, email, password FROM users WHERE email = ?", [email]);
         connection.end();
+
         return users[0];
     }
 
@@ -39,7 +40,12 @@ class User{
         const connection = await createConnection();
         const [user] = await connection.query("INSERT INTO users (username, email, password) VALUES (?, ?, ?)", [this.username, this.email, this.password]);
         connection.end();
-        return user;
+
+        if(user.insertId === 0 || user.affectedRows === 0){
+            throw new Error("No se insertó el usuario de forma correcta");
+        }
+
+        this.id = user.insertId;
     }
 }
 

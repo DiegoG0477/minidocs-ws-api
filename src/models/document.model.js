@@ -1,3 +1,4 @@
+import e from 'express';
 import {createConnection} from '../configs/db.config.js';
 
 class Document{
@@ -34,13 +35,57 @@ class Document{
         return documents[0];
     }
     
+    static async findByUserId(userId){
+        const connection = await createConnection();
+        const [documents] = await connection.query(`SELECT d.id, d.title, d.content, d.createdBy, d.createdAt, d.updatedAt, d.updatedBy, d.deleted, d.deletedAt, d.deletedBy FROM documents d INNER JOIN permissions p ON d.id = p.documentId WHERE p.userId = ? AND d.deleted = 0`, [userId]);
+        connection.end();
+        return documents;
+    }
+
 
     async create(){
         const connection = await createConnection();
         const createdDate = new Date();
         const [document] = await connection.query(`INSERT INTO documents (title, content, createdBy, createdAt) VALUES (?, ?, ?, ?)`, [this.title, this.content, this.createdBy, createdDate]);
+        const [permission] = await connection.query(`INSERT INTO permissions (documentId, userId) VALUES (?, ?)`, [document.insertId, this.createdBy]);
         connection.end();
+
         return document;
+    }
+
+    static async addPermissions(documentId, userId){
+        const connection = await createConnection();
+        const [permission] = await connection.query(`INSERT INTO permissions (documentId, userId) VALUES (?, ?)`, [documentId, userId]);
+        connection.end();
+        return permission;
+    }
+
+    static async inviteUser (documentId, invitedBy, invitedId){
+        const connection = await createConnection();
+        const [invitation] = await connection.query(`INSERT INTO notifications (documentId, invitedId, ownerId) VALUES (?, ?, ?)`, [documentId, invitedId, invitedBy]);
+        connection.end();
+        return invitation;
+    }
+
+    static async getNotifications(userId){
+        const connection = await createConnection();
+        const [notifications] = await connection.query(`SELECT n.id, d.title, n.documentId, n.ownerId, n.invitedId from documents d INNER JOIN notifications n ON d.documentId = n.documentId WHERE n.invitedId = ? AND n.nStatus = pending`, [userId]);
+        connection.end();
+        return notifications;
+    }
+
+    static async responseNotification(notificationId, response){
+        let query;
+        if(response === "accept"){
+            query = `UPDATE notifications SET nStatus = accepted WHERE id = ?`;
+        }else{
+            query = `UPDATE notifications SET nStatus = rejected WHERE id = ?`;
+        }
+
+        const connection = await createConnection();
+        const [permission] = await connection.query(query, [notificationId]);
+        connection.end();
+        return permission;
     }
 
     static async delete(id, deletedBy){
@@ -51,9 +96,30 @@ class Document{
         return document;
     }
 
-    async update(document, id){
+    static async update(document, id){
         const connection = await createConnection();
         const [updatedDocument] = await connection.query(`UPDATE documents SET ? WHERE id = ?`, [document, id]);
+        connection.end();
+        return updatedDocument;
+    }
+
+    static async rename(payload, id, updatedBy){
+        const connection = await createConnection();
+        const [updatedDocument] = await connection.query(`UPDATE documents SET title = ?, updatedBy = ? WHERE id = ?`, [payload.title, updatedBy, id]);
+        connection.end();
+        return updatedDocument;
+    }
+
+    static async getContent(id){
+        const connection = await createConnection();
+        const [document] = await connection.query(`SELECT content FROM documents WHERE id = ?`, [id]);
+        connection.end();
+        return document[0];
+    }
+
+    static async setContent(payload, id, updatedBy){
+        const connection = await createConnection();
+        const [updatedDocument] = await connection.query(`UPDATE documents SET content = ?, updatedBy = ? WHERE id = ?`, [payload.content, updatedBy, id]);
         connection.end();
         return updatedDocument;
     }
