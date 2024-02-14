@@ -1,10 +1,91 @@
 import Document from '../models/document.model.js';
-import jwt from 'jsonwebtoken';
 import 'dotenv/config';
+import User from '../models/user.model.js';
 import DocumentDto from '../dtos/document.dto.js';
 
-const { verify } = jwt;
-const secretJWT = process.env.SECRET_JWT;
+// LONG POLLING
+let resClients = [];
+
+const getDocumentsByUser = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const documents = await Document.findByUserId(userId);
+
+        return res.status(200).json({
+            success: true,
+            documents,
+            message: "se obtuvieron los documentos correctamente"
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "ocurrió un error al obtener los documentos",
+            error: error.message
+        });
+    }
+}
+
+const refreshDocumentsByUser = async (req, res) => {
+    try {
+        resClients.push(res);
+
+        req.on('close', () => {
+            const index = resClients.indexOf(res);
+            if (index !== -1) {
+                resClients.splice(index, 1);
+                res.end();
+            }
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "ocurrió un error al refrescar los documentos",
+            error: error.message
+        });
+    }
+}
+
+const createDocument = async (req, res) => {
+    try {
+        const createdBy = req.user.id;
+        const document = new Document({
+            ...req.body,
+            createdBy: createdBy
+        });
+
+        const createdDocument = await document.create(document);
+
+        refreshClients(document, createdBy);
+
+        return res.status(201).json({
+            success: true,
+            document,
+            message: "se creó el documento correctamente"
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "ocurrió un error al crear el documento",
+            error: error.message
+        });
+    }
+}
+
+function refreshClients(document, userId) {
+    
+    resClients.map(res => {
+        let filterId = res.socket.parser.incoming.user.id;
+        if (userId === filterId) {
+            res.status(200).json({
+                success: true,
+                document
+            });
+        }
+    });
+
+    resClients = [];
+}
 
 const index = async (req, res) => {
     try {
@@ -49,27 +130,6 @@ const show = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "ocurrió un error al obtener el documento",
-            error: error.message
-        });
-    }
-}
-
-const createDocument = async (req, res) => {
-    try {
-        const document = new Document({
-            ...req.body,
-            createdBy: req.user.id
-        });
-
-        return res.status(201).json({
-            success: true,
-            document,
-            message: "se creó el documento correctamente"
-        });
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "ocurrió un error al crear el documento",
             error: error.message
         });
     }
@@ -133,32 +193,65 @@ const updateDocument = async (req, res) => {
     }
 }
 
-const getDocumentsByUser = async (req, res) => {
-    try {
-        const userId = await req.user.id;
 
-        const documents = await Document.findByUserId(userId);
+// const getDocumentsByUser = async (req, res) => {
+//     try {
+//         const userId = await req.user.id;
 
-        return res.status(200).json({
-            success: true,
-            documents,
-            message: "se obtuvieron los documentos correctamente"
-        });
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "ocurrió un error al obtener los documentos",
-            error: error.message
-        });
-    }
-}
+//         const documents = await Document.findByUserId(userId);
 
+//         return res.status(200).json({
+//             success: true,
+//             documents,
+//             message: "se obtuvieron los documentos correctamente"
+//         });
+//     } catch (error) {
+//         return res.status(500).json({
+//             success: false,
+//             message: "ocurrió un error al obtener los documentos",
+//             error: error.message
+//         });
+//     }
+// }
+
+// const refreshDocumentsByUser = async (req, res) => {
+//     try {
+//         const userId = await req.user.id;
+
+//         const resClient = [];
+
+//         resClient.push(res);
+
+//         req.on('close', () => {
+//             const index = resClient.length - 1;
+//             resClient = resClient.slice(index, 1);
+//         });
+//     } catch (error) {
+//         return res.status(500).json({
+//             success: false,
+//             message: "ocurrió un error al refrescar los documentos",
+//             error: error.message
+//         });
+//     }
+// }
 
 const inviteDocumentNotification = async (req, res) => {
     try {
-        const { documentId, invitedBy, invitedUser } = req.body;
+        const invitedBy = req.user.id;
+        const { documentId, email } = req.body;
 
-        const invitedDocument = await Document.inviteUser(documentId, invitedBy, invitedUser);
+        const invitedUser = await User.getByEmail(email);
+
+        if (!invitedUser) {
+            return res.status(404).json({
+                success: false,
+                message: "no se encontró el usuario"
+            });
+        }
+
+        const invitedUserId = invitedUser.id;
+
+        const invitedDocument = await Document.inviteUser(documentId, invitedBy, invitedUserId);
 
         if (!invitedDocument) {
             return res.status(404).json({
@@ -215,6 +308,25 @@ const responseNotification = async (req, res) => {
     }
 }
 
+const getNotifications = async(req, res) => {
+    try {
+        const userId = req.user.id;
+        const notifications = await Document.getNotifications(userId);
+
+        return res.status(200).json({
+            success: true,
+            notifications,
+            message: "se obtuvieron las notificaciones correctamente"
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "ocurrió un error al obtener las notificaciones",
+            error: error.message
+        });
+    }
+}
+
 export {
     index,
     show,
@@ -223,5 +335,7 @@ export {
     updateDocument, 
     inviteDocumentNotification,
     responseNotification,
-    getDocumentsByUser
+    getDocumentsByUser,
+    getNotifications,
+    refreshDocumentsByUser
 }

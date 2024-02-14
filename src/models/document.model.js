@@ -1,4 +1,3 @@
-import e from 'express';
 import {createConnection} from '../configs/db.config.js';
 
 class Document{
@@ -37,7 +36,7 @@ class Document{
     
     static async findByUserId(userId){
         const connection = await createConnection();
-        const [documents] = await connection.query(`SELECT d.id, d.title, d.content, d.createdBy, d.createdAt, d.updatedAt, d.updatedBy, d.deleted, d.deletedAt, d.deletedBy FROM documents d INNER JOIN permissions p ON d.id = p.documentId WHERE d.deleted = 0 AND p.userId = ?`, [userId]);
+        const [documents] = await connection.query(`SELECT d.id, d.title, d.content, d.createdBy, u.username, d.createdAt, d.updatedAt, d.updatedBy, d.deleted, d.deletedAt, d.deletedBy FROM documents d INNER JOIN permissions p ON d.id = p.documentId INNER JOIN users u ON d.createdBy = u.id WHERE d.deleted = 0 AND p.userId = ? ORDER BY updatedAt DESC`, [userId]);
         connection.end();
         return documents;
     }
@@ -70,7 +69,8 @@ class Document{
 
     static async getNotifications(userId){
         const connection = await createConnection();
-        const [notifications] = await connection.query(`SELECT n.id, d.title, n.documentId, n.ownerId, n.invitedId from documents d INNER JOIN notifications n ON d.documentId = n.documentId WHERE n.invitedId = ? AND n.nStatus = pending`, [userId]);
+        // const [notifications] = await connection.query(`SELECT n.id, d.title, n.documentId, n.ownerId, n.invitedId from documents d INNER JOIN notifications n ON d.id = n.documentId WHERE n.invitedId = ? AND n.nStatus = 'pending'`, [userId]);
+        const [notifications] = await connection.query(`SELECT n.id, u.username, d.title, n.documentId, n.ownerId, n.invitedId from documents d INNER JOIN notifications n ON d.id = n.documentId LEFT JOIN users u ON n.ownerId = u.id WHERE n.invitedId = ? AND n.nStatus = 'pending'`, [userId]);
         connection.end();
         return notifications;
     }
@@ -78,14 +78,15 @@ class Document{
     static async responseNotification(notificationId, response){
         let query;
         if(response === "accept"){
-            query = `UPDATE notifications SET nStatus = accepted WHERE id = ?`;
+            query = `UPDATE notifications SET nStatus = 'accepted' WHERE id = ?`;
         }else{
-            query = `UPDATE notifications SET nStatus = rejected WHERE id = ?`;
+            query = `UPDATE notifications SET nStatus = 'rejected' WHERE id = ?`;
         }
 
         const connection = await createConnection();
         const [permission] = await connection.query(query, [notificationId]);
         connection.end();
+
         return permission;
     }
 
@@ -119,8 +120,9 @@ class Document{
     }
 
     static async setContent(payload, id, updatedBy){
+        const updatedDate = new Date();
         const connection = await createConnection();
-        const [updatedDocument] = await connection.query(`UPDATE documents SET content = ?, updatedBy = ? WHERE id = ?`, [payload.content, updatedBy, id]);
+        const [updatedDocument] = await connection.query(`UPDATE documents SET content = ?, updatedBy = ?, updatedAt = ? WHERE id = ?`, [payload.content, updatedBy, updatedDate, id]);
         connection.end();
         return updatedDocument;
     }

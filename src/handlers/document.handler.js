@@ -119,6 +119,8 @@ export const registerDocumentsHandlers = (io, socket) => {
 
     const handleContentChanges = async (content) => {
         try{
+            //long polling y rooms 
+            // emitir una room con el id del documento, solo se limita  a los que están en la room
             socket.broadcast.emit("server:send_document_changes", content);
         } catch(error){
             const data = {
@@ -129,16 +131,9 @@ export const registerDocumentsHandlers = (io, socket) => {
             socket.emit("server:send_changes_error", data);
         }
     } 
-
-    //Update content para guardar los cambios en tiempo real en el documento 
-    //necesito un dto con unicamente el content del documento -> Listo
-    //usando el metodo update, paso el socketId del usuario que modificó 
-    //el documento por ultima vez
     //de lado del cliente, los cambios no guardados que serán rescatados
     //por packet buffer será el texto que escriba el usuario en un
     //estado de desconexión
-
-    //se les manda a llamar con un socket.emit desde el cliente
     
     socket.on("document:update", updateDocument);
     socket.on("document:get_all", getAllDocuments);
